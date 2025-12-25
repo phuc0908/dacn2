@@ -1,0 +1,130 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Camera",
+      "category": "electronics",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/camera.jpg",
+      "price": "1",
+      "rating": 4,
+      "stock": 10
+    },
+    {
+      "id": 2,
+      "name": "Drone",
+      "category": "electronics",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/drone.jpg",
+      "price": "2",
+      "rating": 5,
+      "stock": 6
+    },
+    {
+      "id": 3,
+      "name": "Headset",
+      "category": "electronics",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/headset.jpg",
+      "price": "0.25",
+      "rating": 2,
+      "stock": 24
+    },
+    {
+      "id": 4,
+      "name": "Shoes",
+      "category": "clothing",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/shoes.jpg",
+      "price": "0.25",
+      "rating": 5,
+      "stock": 3
+    },
+    {
+      "id": 5,
+      "name": "Sunglasses",
+      "category": "clothing",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/sunglasses.jpg",
+      "price": "0.10",
+      "rating": 4,
+      "stock": 12
+    },
+    {
+      "id": 6,
+      "name": "Watch",
+      "category": "clothing",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/watch.jpg",
+      "price": "1.25",
+      "rating": 4,
+      "stock": 0
+    },
+    {
+      "id": 7,
+      "name": "Puzzle Cube",
+      "category": "toys",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/cube.jpg",
+      "price": "0.05",
+      "rating": 4,
+      "stock": 15
+    },
+    {
+      "id": 8,
+      "name": "Train Set",
+      "category": "toys",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/train.jpg",
+      "price": "0.20",
+      "rating": 4,
+      "stock": 0
+    },
+    {
+      "id": 9,
+      "name": "Robot Set",
+      "category": "toys",
+      "image": "https://ipfs.io/ipfs/QmTYEboq8raiBs7GTUg2yLXB3PMz6HuBNgNfSZBx5Msztg/robots.jpg",
+      "price": "0.15",
+      "rating": 3,
+      "stock": 12
+    },
+    {
+      "id": 10,
+      "name": "Gaming Console",
+      "category": "electronics",
+      "image": "https://images.unsplash.com/photo-1486401899868-0e435ed85128?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80",
+      "price": "3.5",
+      "rating": 5,
+      "stock": 20
+    },
+    {
+      "id": 11,
+      "name": "VR Headset",
+      "category": "electronics",
+      "image": "https://images.unsplash.com/photo-1622979135225-d2ba269fb1bd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80",
+      "price": "2.1",
+      "rating": 4,
+      "stock": 15
+    },
+    {
+      "id": 12,
+      "name": "Smart Speaker",
+      "category": "electronics",
+      "image": "https://images.unsplash.com/photo-1589492477829-5e65395b66cc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80",
+      "price": "0.8",
+      "rating": 4,
+      "stock": 30
+    },
+    {
+      "id": 13,
+      "name": "Denim Jacket",
+      "category": "clothing",
+      "image": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80",
+      "price": "0.45",
+      "rating": 5,
+      "stock": 8
+    },
+    {
+      "id": 14,
+      "name": "Leather Boots",
+      "category": "clothing",
+      "image": "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80",
+      "price": "0.65",
+      "rating": 4,
+      "stock": 10
+    }
+  ]
+}
