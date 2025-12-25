@@ -5,6 +5,7 @@ import { ethers } from 'ethers';
 
 // Components
 import Navigation from './components/Navigation';
+import Chatbot from './components/Chatbot';
 
 // Pages
 import Home from './pages/Home';
@@ -13,7 +14,7 @@ import Cart from './pages/Cart';
 import History from './pages/History';
 
 function AppContent() {
-  const { account, setAccount } = useShop();
+  const { account, setAccount, dappazon } = useShop();  // ← THÊM dappazon
 
   // Redirect Logic (Keep the network check global)
   useEffect(() => {
@@ -59,6 +60,9 @@ function AppContent() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/history" element={<History />} />
       </Routes>
+
+      {/* ← THÊM CHATBOT Ở ĐÂY */}
+      <Chatbot dappazon={dappazon} account={account} />
     </div>
   );
 }
