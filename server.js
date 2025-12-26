@@ -23,6 +23,9 @@ const contractABI = JSON.parse(
     fs.readFileSync(path.join(__dirname, 'src', 'abis', 'Dappazon.json'), 'utf8')
 );
 
+// Load items to know total count
+const { items } = require('./src/items.json');
+
 const dappazonContract = new ethers.Contract(contractAddress, contractABI, provider);
 
 // Middleware
@@ -38,8 +41,8 @@ async function getProductsFromBlockchain() {
             toys: []
         };
 
-        // Fetch all 9 products
-        for (let i = 1; i <= 9; i++) {
+        // Fetch all products dynamically based on items.json count
+        for (let i = 1; i <= items.length; i++) {
             const item = await dappazonContract.items(i);
             const product = {
                 id: item.id.toString(),
@@ -153,7 +156,9 @@ ${formatProducts(products.toys)}
 - Hỗ trợ cả tiếng Việt và tiếng Anh
 - Giữ câu trả lời ngắn gọn, thân thiện, dễ hiểu
 
-Hãy trả lời một cách tự nhiên, hữu ích và chuyên nghiệp!`;
+Hãy trả lời một cách tự nhiên, hữu ích và chuyên nghiệp!
+
+`;
 }
 
 // Chat endpoint
