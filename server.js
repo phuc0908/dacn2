@@ -4,6 +4,7 @@ const Groq = require('groq-sdk');
 const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
@@ -31,6 +32,12 @@ const dappazonContract = new ethers.Contract(contractAddress, contractABI, provi
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Product name to ID mapping for quick lookup
+const productNameToId = {};
+items.forEach(item => {
+    productNameToId[item.name.toLowerCase()] = item.id;
+});
 
 // Function to fetch products from blockchain
 async function getProductsFromBlockchain() {
@@ -66,6 +73,56 @@ async function getProductsFromBlockchain() {
         return products;
     } catch (error) {
         console.error('Error fetching products from blockchain:', error);
+        return null;
+    }
+}
+
+// Function to parse actions from LLM response
+function parseActions(response) {
+    const actionRegex = /\[ACTION:(\w+):?([^\]]*)\]/g;
+    const actions = [];
+    let match;
+
+    while ((match = actionRegex.exec(response)) !== null) {
+        actions.push({
+            type: match[1],
+            payload: match[2] || null
+        });
+    }
+
+    // Remove action tags from response text
+    const cleanResponse = response.replace(actionRegex, '').trim();
+
+    return { cleanResponse, actions };
+}
+
+// Function to search web using SERPAPI
+async function searchWeb(query) {
+    try {
+        const serpApiKey = process.env.SERPAPI_KEY;
+        if (!serpApiKey) {
+            console.error('SERPAPI_KEY not configured');
+            return null;
+        }
+
+        const response = await axios.get('https://serpapi.com/search', {
+            params: {
+                q: query,
+                api_key: serpApiKey,
+                engine: 'google',
+                num: 5,
+                hl: 'vi' // Vietnamese language
+            }
+        });
+
+        const results = response.data.organic_results || [];
+        return results.slice(0, 5).map(result => ({
+            title: result.title,
+            link: result.link,
+            snippet: result.snippet
+        }));
+    } catch (error) {
+        console.error('SERPAPI Error:', error.message);
         return null;
     }
 }
@@ -156,7 +213,34 @@ ${formatProducts(products.toys)}
 - Hỗ trợ cả tiếng Việt và tiếng Anh
 - Giữ câu trả lời ngắn gọn, thân thiện, dễ hiểu
 
-Hãy trả lời một cách tự nhiên, hữu ích và chuyên nghiệp!
+**QUAN TRỌNG - ACTIONS:**
+Khi người dùng muốn xem sản phẩm cụ thể, thêm action tag vào cuối response:
+
+Danh sách sản phẩm và ID:
+- Camera = 1, Drone = 2, Headset = 3, Shoes = 4, Sunglasses = 5, Watch = 6
+- Puzzle Cube = 7, Train Set = 8, Robot Set = 9, Gaming Console = 10
+- VR Headset = 11, Smart Speaker = 12, Denim Jacket = 13, Leather Boots = 14
+
+Các action có thể dùng:
+- [ACTION:VIEW_PRODUCT:id] - Khi user muốn xem/mua sản phẩm. Ví dụ: [ACTION:VIEW_PRODUCT:2]
+- [ACTION:VIEW_CATEGORY:category] - Khi user muốn xem danh mục (electronics/clothing/toys)
+- [ACTION:GO_HOME] - Khi user muốn về trang chủ
+- [ACTION:GO_CART] - Khi user muốn xem giỏ hàng
+- [ACTION:WEB_SEARCH:query] - Khi user hỏi về thông tin BÊN NGOÀI Dappazon (tin tức crypto, giá ETH, thông tin blockchain mới nhất, etc.)
+
+Ví dụ responses:
+- User: "Cho xem Drone" → "Đây là Drone - flycam chất lượng cao với giá 2 ETH! [ACTION:VIEW_PRODUCT:2]"
+- User: "Mua Camera" → "Camera có giá 1 ETH, đánh giá 4 sao. Bấm nút bên dưới để xem chi tiết! [ACTION:VIEW_PRODUCT:1]"
+- User: "Sản phẩm điện tử" → "Chúng tôi có Camera, Drone, Headset... [ACTION:VIEW_CATEGORY:electronics]"
+- User: "Giá ETH hôm nay" → "Để tôi tìm kiếm giá ETH mới nhất cho bạn... [ACTION:WEB_SEARCH:giá ethereum hôm nay]"
+- User: "Tin tức crypto mới" → "Tôi sẽ tìm tin tức crypto mới nhất! [ACTION:WEB_SEARCH:tin tức cryptocurrency mới nhất]"
+
+QUAN TRỌNG VỀ WEB SEARCH:
+- Chỉ dùng WEB_SEARCH khi user hỏi thông tin NGOÀI Dappazon
+- Các câu hỏi về sản phẩm Dappazon → trả lời từ dữ liệu blockchain ở trên
+- Các câu hỏi về giá crypto, tin tức, thông tin bên ngoài → dùng WEB_SEARCH
+
+Hãy trả lời một cách tự nhiên, hữu ích và chuyên nghiệp! Luôn thêm action khi phù hợp để giúp user dễ dàng tương tác.
 
 `;
 }
@@ -180,20 +264,92 @@ app.post('/api/chat', async (req, res) => {
             { role: 'user', content: message }
         ];
 
-        // Call Groq API
-        const completion = await groq.chat.completions.create({
-            messages: messages,
-            model: 'llama-3.3-70b-versatile', // Updated to active model
-            temperature: 0.7,
-            max_tokens: 500,
-            top_p: 1,
-            stream: false
-        });
+        // Models to try (in order of preference)
+        const models = [
+            'llama-3.3-70b-versatile',
+            'llama-3.1-8b-instant',
+            'gemma2-9b-it',
+            'mixtral-8x7b-32768'
+        ];
 
-        const botResponse = completion.choices[0]?.message?.content || 'Xin lỗi, tôi không thể trả lời lúc này.';
+        let completion = null;
+        let usedModel = null;
+
+        // Try each model until one works
+        for (const model of models) {
+            try {
+                completion = await groq.chat.completions.create({
+                    messages: messages,
+                    model: model,
+                    temperature: 0.7,
+                    max_tokens: 500,
+                    top_p: 1,
+                    stream: false
+                });
+                usedModel = model;
+                break; // Success, exit loop
+            } catch (modelError) {
+                if (modelError.status === 429) {
+                    console.log(`Rate limit on ${model}, trying next model...`);
+                    continue; // Try next model
+                }
+                throw modelError; // Other error, throw it
+            }
+        }
+
+        if (!completion) {
+            throw new Error('All models are rate limited. Please try again later.');
+        }
+
+        console.log(`✅ Using model: ${usedModel}`);
+
+        let rawResponse = completion.choices[0]?.message?.content || 'Xin lỗi, tôi không thể trả lời lúc này.';
+
+        // Parse actions from response
+        let { cleanResponse, actions } = parseActions(rawResponse);
+
+        // Check if there's a WEB_SEARCH action and execute it
+        const webSearchAction = actions.find(a => a.type === 'WEB_SEARCH');
+        if (webSearchAction && webSearchAction.payload) {
+            const searchResults = await searchWeb(webSearchAction.payload);
+
+            if (searchResults && searchResults.length > 0) {
+                // Build messages with search results for a follow-up response
+                const searchContext = searchResults.map((r, i) =>
+                    `${i + 1}. ${r.title}\n   ${r.snippet}\n   Link: ${r.link}`
+                ).join('\n\n');
+
+                const followUpMessages = [
+                    { role: 'system', content: SYSTEM_PROMPT },
+                    ...conversationHistory,
+                    { role: 'user', content: message },
+                    { role: 'assistant', content: rawResponse },
+                    { role: 'user', content: `Đây là kết quả tìm kiếm web:\n\n${searchContext}\n\nHãy tóm tắt thông tin này một cách ngắn gọn và hữu ích cho người dùng. Trả lời bằng tiếng Việt.` }
+                ];
+
+                const followUpCompletion = await groq.chat.completions.create({
+                    messages: followUpMessages,
+                    model: usedModel, // Use same model that worked
+                    temperature: 0.7,
+                    max_tokens: 600,
+                    top_p: 1,
+                    stream: false
+                });
+
+                const followUpResponse = followUpCompletion.choices[0]?.message?.content || cleanResponse;
+                const parsed = parseActions(followUpResponse);
+                cleanResponse = parsed.cleanResponse;
+                // Keep the WEB_SEARCH action but add search results
+                actions = [{
+                    type: 'WEB_SEARCH_RESULTS',
+                    payload: searchResults
+                }];
+            }
+        }
 
         res.json({
-            response: botResponse,
+            response: cleanResponse,
+            actions: actions,
             model: completion.model,
             usage: completion.usage
         });

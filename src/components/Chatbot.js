@@ -1,13 +1,29 @@
 import { useState, useEffect, useRef } from 'react'
-import { ethers } from 'ethers'
+import { useNavigate } from 'react-router-dom'
 import './Chatbot.css'
 
+// Product name mapping for display
+const productNames = {
+    1: 'Camera', 2: 'Drone', 3: 'Headset', 4: 'Shoes',
+    5: 'Sunglasses', 6: 'Watch', 7: 'Puzzle Cube', 8: 'Train Set',
+    9: 'Robot Set', 10: 'Gaming Console', 11: 'VR Headset',
+    12: 'Smart Speaker', 13: 'Denim Jacket', 14: 'Leather Boots'
+}
+
+const categoryNames = {
+    electronics: 'Electronics & Gadgets',
+    clothing: 'Clothing & Jewelry',
+    toys: 'Toys & Gaming'
+}
+
 const Chatbot = ({ dappazon, account }) => {
+    const navigate = useNavigate()
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState([
         {
             type: 'bot',
-            text: 'Xin chào! Tôi là trợ lý AI của Dappazon. Tôi có thể giúp bạn tìm sản phẩm, giải thích về blockchain, hoặc trả lời câu hỏi về cửa hàng. Bạn cần giúp gì?'
+            text: 'Xin chào! Tôi là trợ lý AI của Dappazon. Tôi có thể giúp bạn tìm sản phẩm, giải thích về blockchain, hoặc **đưa bạn đến sản phẩm bạn muốn xem**. Hãy thử hỏi "Cho xem Drone" nhé!',
+            actions: []
         }
     ])
     const [input, setInput] = useState('')
@@ -22,6 +38,77 @@ const Chatbot = ({ dappazon, account }) => {
         scrollToBottom()
     }, [messages])
 
+    // Handle action execution
+    const executeAction = (action) => {
+        switch (action.type) {
+            case 'VIEW_PRODUCT':
+                navigate(`/product/${action.payload}`)
+                setIsOpen(false) // Close chatbot after navigation
+                break
+            case 'VIEW_CATEGORY':
+                navigate('/')
+                // Scroll to category section after navigation
+                setTimeout(() => {
+                    const categorySection = document.getElementById(action.payload)
+                    if (categorySection) {
+                        categorySection.scrollIntoView({ behavior: 'smooth' })
+                    }
+                }, 300)
+                setIsOpen(false)
+                break
+            case 'GO_HOME':
+                navigate('/')
+                setIsOpen(false)
+                break
+            case 'GO_CART':
+                navigate('/cart')
+                setIsOpen(false)
+                break
+            default:
+                console.log('Unknown action:', action)
+        }
+    }
+
+    // Get action button label
+    const getActionLabel = (action) => {
+        switch (action.type) {
+            case 'VIEW_PRODUCT':
+                return `🛒 Xem ${productNames[action.payload] || 'Sản phẩm'}`
+            case 'VIEW_CATEGORY':
+                return `📂 Xem ${categoryNames[action.payload] || action.payload}`
+            case 'GO_HOME':
+                return '🏠 Về trang chủ'
+            case 'GO_CART':
+                return '🛒 Xem giỏ hàng'
+            case 'WEB_SEARCH_RESULTS':
+                return null // Don't show button, will render search results instead
+            default:
+                return 'Thực hiện'
+        }
+    }
+
+    // Render web search results
+    const renderSearchResults = (results) => {
+        if (!results || results.length === 0) return null
+        return (
+            <div className="search-results">
+                <div className="search-results-header">🔍 Kết quả tìm kiếm:</div>
+                {results.map((result, index) => (
+                    <a
+                        key={index}
+                        href={result.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="search-result-item"
+                    >
+                        <div className="search-result-title">{result.title}</div>
+                        <div className="search-result-snippet">{result.snippet}</div>
+                    </a>
+                ))}
+            </div>
+        )
+    }
+
     const getBotResponse = async (userMessage) => {
         try {
             // Call backend API
@@ -32,7 +119,7 @@ const Chatbot = ({ dappazon, account }) => {
                 },
                 body: JSON.stringify({
                     message: userMessage,
-                    conversationHistory: messages.map(msg => ({
+                    conversationHistory: messages.slice(-10).map(msg => ({
                         role: msg.type === 'user' ? 'user' : 'assistant',
                         content: msg.text
                     }))
@@ -44,7 +131,10 @@ const Chatbot = ({ dappazon, account }) => {
             }
 
             const data = await response.json();
-            return data.response;
+            return {
+                text: data.response,
+                actions: data.actions || []
+            };
 
         } catch (error) {
             console.error('Error calling AI:', error);
@@ -53,14 +143,30 @@ const Chatbot = ({ dappazon, account }) => {
             const lowerMessage = userMessage.toLowerCase();
 
             if (lowerMessage.match(/^(hi|hello|xin chào|chào|hey)/)) {
-                return 'Xin chào! Tôi có thể giúp bạn tìm sản phẩm điện tử, quần áo, đồ chơi, hoặc giải thích về cách mua hàng bằng Ethereum. Bạn muốn biết gì?';
+                return {
+                    text: 'Xin chào! Tôi có thể giúp bạn tìm sản phẩm. Thử hỏi "Cho xem Drone" hoặc "Sản phẩm điện tử"!',
+                    actions: []
+                };
             }
 
-            if (lowerMessage.includes('sản phẩm') || lowerMessage.includes('product')) {
-                return 'Chúng tôi có nhiều sản phẩm: Camera, Drone, Headset, Shoes, Sunglasses, Watch, Puzzle Cube, Train Set, Robot Set. Bạn muốn biết thêm về sản phẩm nào?';
+            if (lowerMessage.includes('drone')) {
+                return {
+                    text: 'Drone là sản phẩm hot với giá 2 ETH, đánh giá 5 sao! Bấm nút bên dưới để xem chi tiết.',
+                    actions: [{ type: 'VIEW_PRODUCT', payload: '2' }]
+                };
             }
 
-            return 'Xin lỗi, tôi đang gặp sự cố kết nối. Vui lòng thử lại sau hoặc hỏi về sản phẩm, giá cả, blockchain, hoặc MetaMask!';
+            if (lowerMessage.includes('camera')) {
+                return {
+                    text: 'Camera có giá 1 ETH, đánh giá 4 sao. Xem chi tiết ngay!',
+                    actions: [{ type: 'VIEW_PRODUCT', payload: '1' }]
+                };
+            }
+
+            return {
+                text: 'Xin lỗi, tôi đang gặp sự cố kết nối. Vui lòng thử lại!',
+                actions: []
+            };
         }
     }
 
@@ -68,13 +174,17 @@ const Chatbot = ({ dappazon, account }) => {
         if (!input.trim()) return
 
         const userMessage = input.trim()
-        setMessages(prev => [...prev, { type: 'user', text: userMessage }])
+        setMessages(prev => [...prev, { type: 'user', text: userMessage, actions: [] }])
         setInput('')
         setIsTyping(true)
 
         // Call AI API
         const botResponse = await getBotResponse(userMessage)
-        setMessages(prev => [...prev, { type: 'bot', text: botResponse }])
+        setMessages(prev => [...prev, {
+            type: 'bot',
+            text: botResponse.text,
+            actions: botResponse.actions
+        }])
         setIsTyping(false)
     }
 
@@ -93,7 +203,7 @@ const Chatbot = ({ dappazon, account }) => {
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label="Toggle chatbot"
             >
-                {isOpen ? '✕' : '💬'}
+                {isOpen ? '✕' : '🤖'}
             </button>
 
             {/* Chat Window */}
@@ -103,10 +213,10 @@ const Chatbot = ({ dappazon, account }) => {
                         <div className="chatbot-header-content">
                             <div className="chatbot-avatar">🤖</div>
                             <div>
-                                <h3>Dappazon AI Assistant</h3>
+                                <h3>Dappazon AI Agent</h3>
                                 <p className="chatbot-status">
                                     <span className="status-dot"></span>
-                                    Online
+                                    Có thể điều hướng & tương tác
                                 </p>
                             </div>
                         </div>
@@ -123,8 +233,31 @@ const Chatbot = ({ dappazon, account }) => {
                         {messages.map((msg, index) => (
                             <div key={index} className={`message ${msg.type}`}>
                                 {msg.type === 'bot' && <div className="message-avatar">🤖</div>}
-                                <div className="message-bubble">
-                                    {msg.text}
+                                <div className="message-content">
+                                    <div className="message-bubble">
+                                        {msg.text}
+                                    </div>
+                                    {/* Action Buttons and Search Results */}
+                                    {msg.actions && msg.actions.length > 0 && (
+                                        <div className="message-actions">
+                                            {msg.actions.map((action, actionIndex) => {
+                                                if (action.type === 'WEB_SEARCH_RESULTS') {
+                                                    return renderSearchResults(action.payload)
+                                                }
+                                                const label = getActionLabel(action)
+                                                if (!label) return null
+                                                return (
+                                                    <button
+                                                        key={actionIndex}
+                                                        className="action-button"
+                                                        onClick={() => executeAction(action)}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                                 {msg.type === 'user' && <div className="message-avatar">👤</div>}
                             </div>
@@ -132,10 +265,12 @@ const Chatbot = ({ dappazon, account }) => {
                         {isTyping && (
                             <div className="message bot">
                                 <div className="message-avatar">🤖</div>
-                                <div className="message-bubble typing">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
+                                <div className="message-content">
+                                    <div className="message-bubble typing">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -146,7 +281,7 @@ const Chatbot = ({ dappazon, account }) => {
                         <input
                             type="text"
                             className="chatbot-input"
-                            placeholder="Nhập câu hỏi của bạn..."
+                            placeholder="Thử hỏi: 'Cho xem Drone' hoặc 'Mua Camera'"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={handleKeyPress}
