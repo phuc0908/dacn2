@@ -17,6 +17,7 @@ contract Dappazon {
     struct Order {
         uint256 time;
         Item item;
+        address buyer;
     }
 
     mapping(uint256 => Item) public items;
@@ -44,6 +45,7 @@ contract Dappazon {
         uint256 _rating,
         uint256 _stock
     ) public onlyOwner {
+        require(_id > 0, "Invalid id");
         // Create Item
         Item memory item = Item(
             _id,
@@ -65,6 +67,7 @@ contract Dappazon {
     function buy(uint256 _id) public payable {
         // Fetch item
         Item memory item = items[_id];
+        require(item.id != 0, "Item not listed");
 
         // Require enough ether to buy item
         require(msg.value >= item.cost);
@@ -73,7 +76,7 @@ contract Dappazon {
         require(item.stock > 0);
 
         // Create order
-        Order memory order = Order(block.timestamp, item);
+        Order memory order = Order(block.timestamp, item, msg.sender);
 
         // Add order for user
         orderCount[msg.sender]++; // <-- Order ID

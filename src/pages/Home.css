@@ -1,0 +1,68 @@
+.home__filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0 18px;
+}
+
+.home__filters label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+}
+
+.home__filters select,
+.home__filters input[type="number"] {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  outline: none;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.home__filters select:focus,
+.home__filters input[type="number"]:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.home__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #f8fafc;
+}
+
+.home__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.home__btn {
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: #ffffff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.home__btn:hover {
+  transform: translateY(-1px);
+}
+
+.home__meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 800;
+}
+
+

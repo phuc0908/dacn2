@@ -4,7 +4,7 @@ import { useShop } from '../context/ShopContext';
 import './Navigation.css'; // We might need to create this css file if not exist or inspect index.css
 
 const Navigation = () => {
-    const { account, setAccount, cart } = useShop();
+    const { account, setAccount, cart, searchQuery, setSearchQuery } = useShop();
 
     const connectHandler = async () => {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -21,7 +21,14 @@ const Navigation = () => {
             <input
                 type="text"
                 className="nav__search"
+                placeholder="Tìm sản phẩm..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
             />
+
+            <Link to="/admin" className="nav__admin" aria-label="Open admin dashboard" title="Admin">
+                Admin
+            </Link>
 
             <ul className='nav__links'>
                 <li><Link to="/history">History</Link></li>

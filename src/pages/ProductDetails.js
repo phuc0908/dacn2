@@ -11,15 +11,31 @@ const ProductDetails = () => {
 
     const [item, setItem] = useState(null);
     const [order, setOrder] = useState(null);
+    const [loadError, setLoadError] = useState('');
 
     const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
         const fetchItem = async () => {
             if (!dappazon) return;
-            const fetchedItem = await dappazon.items(id);
-            if (fetchedItem.id.toString() === '0') return;
-            setItem(fetchedItem);
+            try {
+                setLoadError('');
+                const idNum = Number(id);
+                if (!Number.isFinite(idNum) || idNum <= 0) {
+                    setLoadError('Invalid product id.');
+                    return;
+                }
+                const fetchedItem = await dappazon.items(idNum);
+                if (fetchedItem.id.toString() === '0') {
+                    setLoadError('Product not found.');
+                    return;
+                }
+                setItem(fetchedItem);
+            } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error('Failed to fetch item', e);
+                setLoadError(e?.reason || e?.message || 'Failed to load product.');
+            }
         }
         fetchItem();
     }, [dappazon, id]);
@@ -47,13 +63,44 @@ const ProductDetails = () => {
         }
     }
 
-    if (!item) return <div className='product_details_loading'>Loading...</div>;
+    if (!item) {
+        return (
+            <div className='product_details_loading'>
+                Loading...
+                {loadError && (
+                    <div style={{ marginTop: 10, color: '#b91c1c', fontWeight: 800 }}>
+                        {loadError}
+                        <div style={{ marginTop: 10 }}>
+                            <button type="button" className="product-back" onClick={() => navigate('/')}>
+                                ← Home
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    const vrOverride = '/assets/items/vr-headset.jpg'
+    const itemId = Number(item.id?.toString?.() ?? item.id ?? 0)
+    const primaryImg = (itemId === 11 || item.name === 'VR Headset') ? vrOverride : item.image
 
     return (
         <div className="product-details-page">
             <div className="product-details-container">
+                <div className="product-topbar">
+                    <button type="button" className="product-back" onClick={() => navigate('/')}>
+                        ← Home
+                    </button>
+                </div>
                 <div className="product-image">
-                    <img src={item.image} alt="Product" />
+                    <img
+                        src={primaryImg}
+                        onError={(e) => {
+                            if (e.currentTarget.src !== item.image) e.currentTarget.src = item.image
+                        }}
+                        alt="Product"
+                    />
                 </div>
                 <div className="product-info">
                     <h1>{item.name}</h1>
@@ -126,6 +173,23 @@ const ProductDetails = () => {
                     padding: 40px;
                     border-radius: 8px;
                     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                    position: relative;
+                }
+                .product-topbar {
+                    position: absolute;
+                    top: 14px;
+                    left: 14px;
+                }
+                .product-back {
+                    border: 1px solid rgba(15, 23, 42, 0.12);
+                    background: #fff;
+                    padding: 10px 12px;
+                    border-radius: 12px;
+                    font-weight: 800;
+                    cursor: pointer;
+                }
+                .product-back:hover {
+                    transform: translateY(-1px);
                 }
                 .product-image {
                     flex: 1;

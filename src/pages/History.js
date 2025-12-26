@@ -38,10 +38,22 @@ const History = () => {
                         <div key={index} className="order-card">
                             <div className="order-header">
                                 <span>Order Placed: {new Date(Number(order.time.toString() + '000')).toLocaleString()}</span>
+                                <span>Buyer: {order.buyer}</span>
                                 <span>Total: {ethers.utils.formatUnits(order.item.cost.toString(), 'ether')} ETH</span>
                             </div>
                             <div className="order-body">
-                                <img src={order.item.image} alt={order.item.name} />
+                                <img
+                                    src={
+                                        (Number(order?.item?.id?.toString?.() ?? order?.item?.id ?? 0) === 11 ||
+                                            order?.item?.name === 'VR Headset')
+                                            ? '/assets/items/vr-headset.jpg'
+                                            : order.item.image
+                                    }
+                                    onError={(e) => {
+                                        if (e.currentTarget.src !== order.item.image) e.currentTarget.src = order.item.image
+                                    }}
+                                    alt={order.item.name}
+                                />
                                 <div>
                                     <h3>{order.item.name}</h3>
                                     <p>Detail: {order.item.category}</p>
@@ -55,7 +67,7 @@ const History = () => {
             <style>{`
                 .history-page { padding: 20px 50px; }
                 .order-card { border: 1px solid #ddd; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
-                .order-header { background: #f0f2f2; padding: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; }
+                .order-header { background: #f0f2f2; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; flex-wrap: wrap; gap: 10px; }
                 .order-body { padding: 20px; display: flex; gap: 20px; align-items: center; }
                 .order-body img { width: 80px; height: 80px; object-fit: contain; }
             `}</style>

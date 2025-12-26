@@ -15,15 +15,34 @@ const groq = new Groq({
 });
 
 // Initialize blockchain connection
-const provider = new ethers.providers.JsonRpcProvider(process.env.BLOCKCHAIN_RPC_URL || 'http://127.0.0.1:8545');
-const contractAddress = process.env.CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const rpcUrl = process.env.BLOCKCHAIN_RPC_URL || 'http://127.0.0.1:8545';
+const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+function getContractAddress() {
+    // Prefer .env, fallback to src/config.json (Hardhat local)
+    if (process.env.CONTRACT_ADDRESS) return process.env.CONTRACT_ADDRESS;
+
+    try {
+        const configPath = path.join(__dirname, 'src', 'config.json');
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        return config?.["31337"]?.dappazon?.address || null;
+    } catch (e) {
+        return null;
+    }
+}
 
 // Load contract ABI
-const contractABI = JSON.parse(
-    fs.readFileSync(path.join(__dirname, 'src', 'abis', 'Dappazon.json'), 'utf8')
-);
+function getContractAbi() {
+    const raw = JSON.parse(fs.readFileSync(path.join(__dirname, 'src', 'abis', 'Dappazon.json'), 'utf8'));
+    return Array.isArray(raw) ? raw : raw.abi;
+}
 
-const dappazonContract = new ethers.Contract(contractAddress, contractABI, provider);
+function getReadonlyContract() {
+    const address = getContractAddress();
+    if (!address) throw new Error('CONTRACT_ADDRESS not found (set env or src/config.json)');
+    return new ethers.Contract(address, getContractAbi(), provider);
+}
+
 
 // Middleware
 app.use(cors());
@@ -38,9 +57,14 @@ async function getProductsFromBlockchain() {
             toys: []
         };
 
-        // Fetch all 9 products
-        for (let i = 1; i <= 9; i++) {
+        const dappazonContract = getReadonlyContract();
+        // Keep simple & stable: fetch base catalog size (14 items) by default
+        // (Server is used for chat; product management is handled elsewhere.)
+        const total = 14;
+
+        for (let i = 1; i <= total; i++) {
             const item = await dappazonContract.items(i);
+            if (item.id.toString() === '0') continue;
             const product = {
                 id: item.id.toString(),
                 name: item.name,
@@ -210,4 +234,7 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
     console.log(`🤖 Dappazon AI Server running on http://localhost:${PORT}`);
     console.log(`✅ Groq API configured`);
+    const addr = getContractAddress();
+    console.log(`🔗 RPC: ${rpcUrl}`);
+    console.log(`📦 Contract: ${addr || '(missing - set CONTRACT_ADDRESS or src/config.json)'}`);
 });

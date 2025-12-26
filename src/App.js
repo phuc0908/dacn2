@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import History from './pages/History';
+import Admin from './pages/Admin';
 
 function AppContent() {
   const { account, setAccount, dappazon } = useShop();  // ← THÊM dappazon
@@ -59,6 +60,7 @@ function AppContent() {
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/history" element={<History />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
 
       {/* ← THÊM CHATBOT Ở ĐÂY */}

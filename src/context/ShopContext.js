@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 // Config
 import config from '../config.json';
 import Dappazon from '../abis/Dappazon.json';
+import itemsList from '../items.json';
 
 const ShopContext = createContext();
 
@@ -11,6 +12,7 @@ export const ShopProvider = ({ children }) => {
     const [provider, setProvider] = useState(null);
     const [dappazon, setDappazon] = useState(null);
     const [account, setAccount] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [items, setItems] = useState({
         electronics: [],
@@ -37,20 +39,19 @@ export const ShopProvider = ({ children }) => {
                 return;
             }
 
-            const dappazon = new ethers.Contract(config[network.chainId].dappazon.address, Dappazon, provider);
+            // `src/abis/Dappazon.json` may be either an ABI array or a Hardhat artifact { abi: [...] }.
+            const dappazonAbi = Array.isArray(Dappazon) ? Dappazon : Dappazon.abi;
+            const dappazon = new ethers.Contract(
+                config[network.chainId].dappazon.address,
+                dappazonAbi,
+                provider
+            );
             setDappazon(dappazon);
 
             // Load Items
             const allItems = [];
-            // We can read the length from our local items.json to know how many to fetch
-            // But we need to import it first. 
-            // Since we are inside the function, let's look at the top imports.
-            // We need to add `import itemsList from '../items.json'` at the top of file
-            // For now, let's hardcode a larger number or just loop until error? 
-            // Better to rely on items.json length. 
-
-            // Assuming we added the import, we use itemsList.items.length
-            const totalItems = 14; // Updated manually for now or use the length from json if imported
+            // Read how many items to fetch from our local catalog
+            const totalItems = itemsList?.items?.length ?? 0;
 
             for (var i = 0; i < totalItems; i++) {
                 // Try catch to handle if we ask for non-existent item (though we shouldn't)
@@ -110,6 +111,8 @@ export const ShopProvider = ({ children }) => {
             dappazon,
             account,
             setAccount,
+            searchQuery,
+            setSearchQuery,
             items,
             cart,
             addToCart,
